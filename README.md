@@ -1,5 +1,5 @@
 # Smart_campus
-🎓 Single-file student management system — registration, enrollment, grades, fees &amp; analytics. Bulk CSV grade upload, PDF export, department-wise charts. No backend, no dependencies. Runs entirely in the browser.
+🎓 Single-file student management system — registration, enrollment, grades, fees &amp; analytics. Bulk CSV grade upload, PDF export, department-wise charts. Runs entirely in the browser.
 # 🎓 SmartCampus – Student Management System
  
 A lightweight, single-file web app for managing student records, grades, enrollments, and fees — no backend, no database, no installation required.
