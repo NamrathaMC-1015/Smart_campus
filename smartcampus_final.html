@@ -1,0 +1,1879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SmartCampus – Smart Information System</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:          #dbeafe;
+    --surface:     #eff6ff;
+    --card:        #ffffff;
+    --primary:     #1d4ed8;
+    --primary-lt:  #3b82f6;
+    --accent:      #0ea5e9;
+    --text:        #1e3a5f;
+    --text-sub:    #3b5998;
+    --border:      #bfdbfe;
+    --success:     #16a34a;
+    --danger:      #dc2626;
+    --warning:     #d97706;
+    --radius:      12px;
+    --shadow:      0 4px 18px rgba(29,78,216,.12);
+  }
+
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    color: #fff; padding: 0 2rem; display: flex; align-items: center;
+    justify-content: space-between; height: 64px;
+    box-shadow: 0 2px 12px rgba(29,78,216,.3); position: sticky; top: 0; z-index: 100;
+  }
+  header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: .5px; }
+  #clock { font-size: 1rem; font-weight: 500; opacity: .9; }
+
+  .page { display: none; padding: 2rem; max-width: 1100px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* HOME STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.2rem; margin-bottom: 2rem; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem 1.2rem; text-align: center; box-shadow: var(--shadow); }
+  .stat-card .val { font-size: 2.2rem; font-weight: 800; color: var(--primary); }
+  .stat-card .lbl { font-size: 1rem; color: var(--text-sub); margin-top: .3rem; }
+
+  /* HOME CARDS */
+  .home-title { font-size: 1.9rem; font-weight: 700; color: var(--primary); margin-bottom: .4rem; }
+  .home-sub { font-size: 1.15rem; color: var(--text-sub); margin-bottom: 2rem; }
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.4rem; }
+  .nav-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.8rem 1.6rem; cursor: pointer;
+    transition: transform .18s, box-shadow .18s, border-color .18s;
+    box-shadow: var(--shadow); display: flex; flex-direction: column; gap: .7rem;
+  }
+  .nav-card:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(29,78,216,.18); border-color: var(--primary-lt); }
+  .nav-card .icon { font-size: 2.4rem; }
+  .nav-card h3 { font-size: 1.2rem; font-weight: 700; color: var(--primary); }
+  .nav-card p { font-size: 1.05rem; color: var(--text-sub); line-height: 1.6; }
+
+  /* PAGE HEADER */
+  .page-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+  .page-header h2 { font-size: 1.6rem; font-weight: 700; color: var(--primary); }
+  .btn-back { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: .5rem 1.1rem; font-size: .95rem; cursor: pointer; transition: background .15s; }
+  .btn-back:hover { background: var(--primary-lt); }
+
+  /* FORMS */
+  .form-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow); margin-bottom: 1.5rem; }
+  .form-card h3 { font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: .5rem; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+  label { display: block; font-size: .97rem; font-weight: 600; color: var(--text); margin-bottom: .35rem; }
+  input, select, textarea {
+    width: 100%; padding: .6rem .9rem; border: 1.5px solid var(--border); border-radius: 8px;
+    font-size: 1rem; color: var(--text); background: var(--surface); transition: border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-lt); background: #fff; }
+
+  /* BUTTONS */
+  .btn { display: inline-flex; align-items: center; gap: .4rem; border: none; border-radius: 8px; padding: .65rem 1.4rem; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background .15s, transform .1s; }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-lt); }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { background: #15803d; }
+  .btn-danger  { background: var(--danger);  color: #fff; }
+  .btn-danger:hover  { background: #b91c1c; }
+  .btn-accent  { background: var(--accent);  color: #fff; }
+  .btn-accent:hover  { background: #0284c7; }
+  .btn-warning { background: var(--warning); color: #fff; }
+  .btn-warning:hover { background: #b45309; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--primary); color: #fff; padding: .9rem 1.4rem; border-radius: 10px; font-size: 1rem; font-weight: 600; display: none; z-index: 9999; box-shadow: 0 4px 20px rgba(0,0,0,.2); max-width: 340px; }
+
+  /* TABLES */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); font-size: 1rem; }
+  thead { background: var(--primary); color: #fff; }
+  th, td { padding: .85rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+  tbody tr:hover { background: #eff6ff; }
+  .badge { display: inline-block; padding: .2rem .65rem; border-radius: 20px; font-size: .85rem; font-weight: 700; }
+  .badge-green  { background:#dcfce7; color:#15803d; }
+  .badge-blue   { background:#dbeafe; color:#1d4ed8; }
+  .badge-yellow { background:#fef9c3; color:#92400e; }
+  .badge-red    { background:#fee2e2; color:#dc2626; }
+  .badge-purple { background:#ede9fe; color:#6d28d9; }
+  .badge-gray   { background:#f1f5f9; color:#475569; }
+
+  /* GRADES */
+  .grade-O { color:#15803d; font-weight:700; }
+  .grade-A { color:#1d4ed8; font-weight:700; }
+  .grade-B { color:#7c3aed; font-weight:700; }
+  .grade-C { color:#d97706; font-weight:700; }
+  .grade-F { color:#dc2626; font-weight:700; }
+
+  /* ANALYTICS */
+  .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.4rem; }
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow); }
+  .chart-card h3 { font-size: 1.05rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; }
+
+  /* TOPPERS TABLE */
+  .toppers-section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.6rem; box-shadow: var(--shadow); margin-top: 1.8rem; }
+  .toppers-section h3 { font-size: 1.2rem; font-weight: 700; color: var(--primary); margin-bottom: 1.2rem; border-bottom: 2px solid var(--border); padding-bottom: .6rem; }
+  .rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font-weight: 800; font-size: .9rem; }
+  .rank-1 { background: #fef9c3; color: #92400e; border: 1.5px solid #fbbf24; }
+  .rank-2 { background: #f1f5f9; color: #475569; border: 1.5px solid #94a3b8; }
+  .rank-3 { background: #fef3c7; color: #92400e; border: 1.5px solid #d97706; }
+  .rank-other { background: #eff6ff; color: #1d4ed8; border: 1.5px solid #93c5fd; }
+  .topper-row-1 { background: linear-gradient(90deg, #fffbeb 0%, #fff 100%) !important; }
+  .topper-row-2 { background: linear-gradient(90deg, #f8fafc 0%, #fff 100%) !important; }
+  .topper-row-3 { background: linear-gradient(90deg, #fff7ed 0%, #fff 100%) !important; }
+
+  /* OVERVIEW */
+  .overview-controls { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.2rem; }
+  .overview-controls input { max-width: 240px; }
+  .overview-controls select { max-width: 180px; }
+
+  /* COURSE CATALOG CHIPS */
+  .course-catalog { margin-top: 1rem; }
+  .course-catalog h4 { font-size: .95rem; font-weight: 700; color: var(--text-sub); margin-bottom: .5rem; }
+  .course-chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .7rem; }
+  .course-chip {
+    background: var(--surface); border: 1.5px solid var(--border); border-radius: 20px;
+    padding: .3rem .9rem; font-size: .88rem; color: var(--text); cursor: pointer;
+    transition: all .15s;
+  }
+  .course-chip:hover { background: #dbeafe; border-color: var(--primary-lt); color: var(--primary); }
+  .course-chip.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  /* BULK UPLOAD */
+  .bulk-section { background: #f0f9ff; border: 2px dashed var(--accent); border-radius: var(--radius); padding: 1.8rem; text-align: center; margin-bottom: 1.5rem; }
+  .bulk-section p { font-size: 1.05rem; color: var(--text-sub); margin-bottom: 1rem; }
+  .bulk-result { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow); margin-top: 1.2rem; }
+  .bulk-result h3 { font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .8rem; margin-bottom: 1rem; }
+  .summary-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: .9rem 1rem; text-align: center; }
+  .summary-stat .sv { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
+  .summary-stat .sl { font-size: .9rem; color: var(--text-sub); }
+
+  /* INFO BOX */
+  .info-box { background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 10px; padding: 1rem 1.2rem; font-size: .95rem; color: var(--text-sub); margin-bottom: 1rem; line-height: 1.6; }
+
+  /* ENROLLMENT YEAR PANEL */
+  .year-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 1.5rem; overflow: hidden; }
+  .year-panel-header { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; padding: 1rem 1.4rem; font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: .6rem; }
+  .year-panel-body { padding: 0; }
+  .enr-student-row { display: grid; grid-template-columns: 220px 1fr auto; align-items: start; gap: 1rem; padding: 1rem 1.4rem; border-bottom: 1px solid var(--border); transition: background .15s; }
+  .enr-student-row:last-child { border-bottom: none; }
+  .enr-student-row:hover { background: var(--surface); }
+  .enr-student-info { display: flex; flex-direction: column; gap: .2rem; padding-top: .3rem; }
+  .enr-student-info .sname { font-weight: 700; font-size: 1rem; color: var(--text); }
+  .enr-student-info .sid   { font-size: .83rem; color: var(--text-sub); }
+  .enr-courses-list { display: flex; flex-direction: column; gap: .35rem; }
+  .enr-course-item { display: flex; align-items: center; gap: .5rem; font-size: .9rem; }
+  .enr-course-item .cname { flex: 1; color: var(--text); }
+  .enr-course-item .ccode { font-size: .78rem; color: var(--text-sub); background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: .1rem .4rem; }
+  .enr-course-item .ccred { font-size: .78rem; color: var(--accent); font-weight: 600; }
+  .enr-course-item.done .cname { color: var(--success); }
+  .enr-course-item.done::before { content: '✓'; color: var(--success); font-weight: 700; font-size: .85rem; }
+  .enr-course-item.todo::before { content: '○'; color: var(--text-sub); font-size: .85rem; }
+  .enr-action { display: flex; flex-direction: column; gap: .5rem; align-items: flex-end; padding-top: .15rem; }
+  .enr-status-chip { font-size: .78rem; font-weight: 600; padding: .2rem .7rem; border-radius: 20px; text-align: center; }
+  .enr-status-chip.full { background: #dcfce7; color: #15803d; }
+  .enr-status-chip.partial { background: #fef9c3; color: #92400e; }
+  .enr-status-chip.none { background: #fee2e2; color: #dc2626; }
+  .no-students-msg { padding: 2rem; text-align: center; color: var(--text-sub); font-size: .95rem; }
+
+  /* MODAL INFO FIELD */
+  .modal-field { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: .7rem .9rem; }
+  .modal-field .mf-label { font-size: .75rem; font-weight: 600; color: var(--text-sub); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .25rem; }
+  .modal-field .mf-value { font-size: .95rem; color: var(--text); font-weight: 500; }
+
+  @media(max-width:600px) {
+    .page { padding: 1rem; }
+    header h1 { font-size: 1.1rem; }
+    .home-title { font-size: 1.4rem; }
+    .enr-student-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎓 SmartCampus</h1>
+  <div style="display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;">
+    <span id="storage-badge" style="font-size:.82rem;font-weight:500;opacity:.9;white-space:nowrap;">💾 Loading…</span>
+    <button onclick="clearAllData()" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:.3rem .8rem;font-size:.8rem;cursor:pointer;white-space:nowrap;" title="Clear all stored data">🗑️ Clear Data</button>
+    <span id="clock"></span>
+  </div>
+</header>
+
+<div id="toast"></div>
+
+<!-- ═══════════ HOME ═══════════ -->
+<div class="page active" id="page-home">
+  <div style="padding:2rem 0 1rem;">
+    <div class="home-title">📚 Smart Information System</div>
+    <div class="home-sub">A unified digital platform to manage student registrations, academic records, course enrollments, fees, and performance analytics.</div>
+
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card"><div class="val" id="stat-students">0</div><div class="lbl">👤 Students</div></div>
+      <div class="stat-card"><div class="val" id="stat-courses">0</div><div class="lbl">📖 Courses Enrolled</div></div>
+      <div class="stat-card"><div class="val" id="stat-grades">0</div><div class="lbl">📊 Grades Recorded</div></div>
+      <div class="stat-card"><div class="val" id="stat-avg">--</div><div class="lbl">⭐ Avg Score</div></div>
+    </div>
+
+    <div class="cards-grid">
+      <div class="nav-card" onclick="nav('registration')">
+        <div class="icon">🧑‍🎓</div>
+        <h3>Student Registration</h3>
+        <p>Register new students with personal & academic details, specify admission type (KCET or Management Seat), and manage all existing student profiles.</p>
+      </div>
+      <div class="nav-card" onclick="nav('enrollment')">
+        <div class="icon">📖</div>
+        <h3>Course Enrollment</h3>
+        <p>Enroll students into year-specific courses. Each year has its own dedicated course catalog. Maximum of 5 courses per student.</p>
+      </div>
+      <div class="nav-card" onclick="nav('grades')">
+        <div class="icon">📝</div>
+        <h3>Grade Evaluation</h3>
+        <p>Enter exam scores to auto-evaluate letter grades for enrolled courses. Supports bulk upload via CSV for batch grade processing.</p>
+      </div>
+      <div class="nav-card" onclick="nav('fees')">
+        <div class="icon">💰</div>
+        <h3>Fee Calculator</h3>
+        <p>Auto-calculate tuition based on admission type (KCET: ₹50,000 / Management: ₹80,000), plus hostel and transport charges.</p>
+      </div>
+      <div class="nav-card" onclick="nav('directory')">
+        <div class="icon">📋</div>
+        <h3>Student Directory</h3>
+        <p>Search, view, filter, and sort all registered students by name, ID, department, or year of study.</p>
+      </div>
+      <div class="nav-card" onclick="nav('analytics')">
+        <div class="icon">📊</div>
+        <h3>Analytics Dashboard</h3>
+        <p>Visual insights: grade distributions, department-wise enrollment, score averages, admission breakdowns, and a ranked Toppers Board.</p>
+      </div>
+      <div class="nav-card" onclick="nav('overview')" style="border:2px solid var(--primary);background:linear-gradient(135deg,#eff6ff,#dbeafe);">
+        <div class="icon">🗂️</div>
+        <h3>Overall Overview</h3>
+        <p>A comprehensive, sortable snapshot of every student — ID, Name, Year, Admission Type, Fee Status, Avg Score, Grade — with a PDF download button.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ REGISTRATION ═══════════ -->
+<div class="page" id="page-registration">
+  <div class="page-header">
+    <button class="btn-back" onclick="nav('home')">← Back</button>
+    <h2>🧑‍🎓 Student Registration</h2>
+  </div>
+  <div class="form-card">
+    <h3>Register New Student</h3>
+    <div class="info-box">All data is automatically saved to local storage — your records persist across sessions and page refreshes.</div>
+    <div class="form-grid">
+      <div><label>Student ID *</label><input type="text" id="reg-id" placeholder="e.g. SC2025001"/></div>
+      <div><label>Full Name *</label><input type="text" id="reg-name" placeholder="Full name"/></div>
+      <div><label>Email Address</label><input type="email" id="reg-email" placeholder="student@email.com"/></div>
+      <div><label>Phone Number</label><input type="tel" id="reg-phone" placeholder="10-digit number"/></div>
+      <div><label>Department *</label>
+        <select id="reg-dept">
+          <option value="">-- Select --</option>
+          <option>Computer Science</option><option>Electronics</option>
+          <option>Mechanical</option><option>Civil</option>
+          <option>Information Science</option><option>Electrical</option>
+        </select>
+      </div>
+      <div><label>Year of Study *</label>
+        <select id="reg-year">
+          <option value="">-- Select --</option>
+          <option>1st Year</option><option>2nd Year</option>
+          <option>3rd Year</option><option>4th Year</option>
+        </select>
+      </div>
+      <div><label>Date of Birth</label><input type="date" id="reg-dob"/></div>
+      <div><label>Gender</label>
+        <select id="reg-gender">
+          <option value="">-- Select --</option>
+          <option>Male</option><option>Female</option><option>Other</option>
+        </select>
+      </div>
+      <div><label>Admission Type *</label>
+        <select id="reg-admission">
+          <option value="">-- Select --</option>
+          <option value="KCET">KCET Seat (Tuition: ₹50,000)</option>
+          <option value="Management">Management Seat (Tuition: ₹80,000)</option>
+        </select>
+      </div>
+      <div><label>Address</label><input type="text" id="reg-address" placeholder="City, State"/></div>
+    </div>
+    <div style="margin-top:1.2rem;"><button class="btn btn-primary" onclick="registerStudent()">➕ Register Student</button></div>
+  </div>
+  <div class="form-card">
+    <h3>All Registered Students</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Name</th><th>Dept</th><th>Year</th><th>Admission</th><th>Email</th><th>Action</th></tr></thead>
+        <tbody id="reg-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ COURSE ENROLLMENT ═══════════ -->
+<div class="page" id="page-enrollment">
+  <div class="page-header">
+    <button class="btn-back" onclick="nav('home')">← Back</button>
+    <h2>📖 Course Enrollment</h2>
+  </div>
+
+  <div class="info-box" style="margin-bottom:1.5rem;">
+    Each year group below shows all registered students and their 5 pre-assigned courses.
+    Click <strong>Enroll All Courses</strong> to enroll a student in all 5 courses for their year at once.
+    Already-enrolled courses are skipped automatically.
+  </div>
+
+  <!-- Year panels rendered by JS -->
+  <div id="enr-year-panels"></div>
+
+  <!-- Enrollment Records -->
+  <div class="form-card">
+    <h3>📋 All Enrollment Records</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Student</th><th>Course</th><th>Code</th><th>Credits</th><th>Year</th><th>Action</th></tr></thead>
+        <tbody id="enr-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ GRADE EVALUATION ═══════════ -->
+<div class="page" id="page-grades">
+  <div class="page-header">
+    <button class="btn-back" onclick="nav('home')">← Back</button>
+    <h2>📝 Grade Evaluation</h2>
+  </div>
+
+  <div class="form-card">
+    <h3>📌 Manual Grade Entry</h3>
+    <div class="form-grid">
+      <div><label>Select Student *</label><select id="gr-student" onchange="populateCourseDropdown()"></select></div>
+      <div><label>Select Course *</label><select id="gr-course"></select></div>
+      <div><label>Exam Score (0–100) *</label><input type="number" id="gr-score" placeholder="e.g. 82" min="0" max="100"/></div>
+    </div>
+    <div style="margin-top:1rem;"><button class="btn btn-primary" onclick="saveGrade()">💾 Save Grade</button></div>
+  </div>
+
+  <div class="form-card">
+    <h3>📂 Bulk Grade Upload (CSV)</h3>
+    <p style="font-size:1.05rem;color:var(--text-sub);margin-bottom:1rem;">Upload a CSV file with columns: <strong>StudentID, StudentName, Course, Score</strong>. The system will parse, evaluate grades, and generate a full summary report.</p>
+    <div class="bulk-section">
+      <p>📎 Drag & drop your CSV file here, or click to browse</p>
+      <input type="file" id="bulk-file" accept=".csv,.xlsx,.xls,.pdf" style="display:none;" onchange="processBulkFile(event)"/>
+      <button class="btn btn-accent" onclick="document.getElementById('bulk-file').click()">📁 Choose File</button>
+      <div id="bulk-file-name" style="margin-top:.7rem;font-size:.95rem;color:var(--text-sub);"></div>
+    </div>
+    <div style="margin-bottom:1rem;"><button class="btn btn-success" onclick="downloadSampleCSV()">⬇️ Download Sample CSV Template</button></div>
+    <div class="bulk-result" id="bulk-result" style="display:none;">
+      <h3>📊 Bulk Evaluation Summary</h3>
+      <div class="summary-grid" id="bulk-summary-stats"></div>
+      <div class="table-wrap" style="margin-top:1rem;">
+        <table>
+          <thead><tr><th>Student ID</th><th>Name</th><th>Course</th><th>Score</th><th>Grade</th><th>Remark</th></tr></thead>
+          <tbody id="bulk-table-body"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:1.2rem;display:flex;gap:.8rem;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="importBulkGrades()">✅ Import These Grades</button>
+        <button class="btn btn-danger" onclick="clearBulk()">🗑️ Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h3>All Grade Records</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Student</th><th>Course</th><th>Score</th><th>Grade</th></tr></thead>
+        <tbody id="gr-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ FEE CALCULATOR ═══════════ -->
+<div class="page" id="page-fees">
+  <div class="page-header">
+    <button class="btn-back" onclick="nav('home')">← Back</button>
+    <h2>💰 Fee Calculator</h2>
+  </div>
+  <div class="form-card">
+    <h3>Calculate Student Fees</h3>
+    <div class="form-grid">
+      <div><label>Select Student *</label><select id="fee-student" onchange="autoFillAdmission()"></select></div>
+      <div><label>Admission Type</label><input type="text" id="fee-admission" readonly style="background:#f1f5f9;font-weight:600;"/></div>
+      <div><label>Tuition Fee (₹)</label><input type="number" id="fee-tuition" readonly style="background:#f1f5f9;font-weight:600;"/></div>
+      <div><label>Hostel Fee (₹)</label><input type="number" id="fee-hostel" placeholder="0" min="0"/></div>
+      <div><label>Transport Fee (₹)</label><input type="number" id="fee-transport" placeholder="0" min="0"/></div>
+      <div><label>Payment Status</label>
+        <select id="fee-status">
+          <option value="Pending">Pending</option>
+          <option value="Partial">Partial</option>
+          <option value="Paid">Paid</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:1.2rem;display:flex;gap:.8rem;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="calcFee()">🧮 Calculate & Save</button>
+    </div>
+    <div id="fee-result" style="margin-top:1.2rem;"></div>
+  </div>
+  <div class="form-card">
+    <h3>Fee Records</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Student</th><th>Admission</th><th>Tuition</th><th>Hostel</th><th>Transport</th><th>Total</th><th>Status</th></tr></thead>
+        <tbody id="fee-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ STUDENT DIRECTORY ═══════════ -->
+<div class="page" id="page-directory">
+  <div class="page-header">
+    <button class="btn-back" onclick="nav('home')">← Back</button>
+    <h2>📋 Student Directory</h2>
+  </div>
+  <div class="form-card" style="padding:1.2rem;">
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+      <input type="text" id="dir-search" placeholder="🔍 Search by name or ID…" style="max-width:260px;" oninput="renderDirectory()"/>
+      <select id="dir-dept" style="max-width:200px;" onchange="renderDirectory()">
+        <option value="">All Departments</option>
+        <option>Computer Science</option><option>Electronics</option>
+        <option>Mechanical</option><option>Civil</option>
+        <option>Information Science</option><option>Electrical</option>
+      </select>
+      <select id="dir-year" style="max-width:160px;" onchange="renderDirectory()">
+        <option value="">All Years</option>
+        <option>1st Year</option><option>2nd Year</option>
+        <option>3rd Year</option><option>4th Year</option>
+      </select>
+      <select id="dir-sort" style="max-width:180px;" onchange="renderDirectory()">
+        <option value="id">Sort by ID</option>
+        <option value="name">Sort by Name</option>
+        <option value="dept">Sort by Dept</option>
+      </select>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ID</th><th>Name</th><th>Dept</th><th>Year</th><th>Admission</th><th>Email</th><th>Phone</th><th>Action</th></tr></thead>
+      <tbody id="dir-table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════ STUDENT DETAIL MODAL ═══════════ -->
+<div id="student-modal" style="display:none;position:fixed;inset:0;background:rgba(15,30,60,.55);z-index:1000;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(29,78,216,.25);">
+    <!-- Modal Header -->
+    <div style="background:linear-gradient(135deg,#1d4ed8,#0ea5e9);padding:1.5rem 1.8rem;border-radius:16px 16px 0 0;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div id="modal-avatar" style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;color:#fff;flex-shrink:0;"></div>
+        <div>
+          <div id="modal-name" style="font-size:1.25rem;font-weight:700;color:#fff;"></div>
+          <div id="modal-id-badge" style="font-size:.88rem;color:rgba(255,255,255,.8);margin-top:.1rem;"></div>
+        </div>
+      </div>
+      <button onclick="closeStudentModal()" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:1.1rem;color:#fff;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+    <!-- Modal Body -->
+    <div style="padding:1.6rem 1.8rem;">
+      <!-- Personal Info -->
+      <div style="margin-bottom:1.4rem;">
+        <div style="font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#3b5998;margin-bottom:.75rem;padding-bottom:.4rem;border-bottom:2px solid #bfdbfe;">Personal Information</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.9rem;" id="modal-personal"></div>
+      </div>
+      <!-- Academic Info -->
+      <div style="margin-bottom:1.4rem;">
+        <div style="font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#3b5998;margin-bottom:.75rem;padding-bottom:.4rem;border-bottom:2px solid #bfdbfe;">Academic Details</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.9rem;" id="modal-academic"></div>
+      </div>
+      <!-- Enrolled Courses -->
+      <div style="margin-bottom:1.4rem;">
+        <div style="font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#3b5998;margin-bottom:.75rem;padding-bottom:.4rem;border-bottom:2px solid #bfdbfe;">Enrolled Courses</div>
+        <div id="modal-courses"></div>
+      </div>
+      <!-- Grades -->
+      <div style="margin-bottom:1.4rem;">
+        <div style="font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#3b5998;margin-bottom:.75rem;padding-bottom:.4rem;border-bottom:2px solid #bfdbfe;">Grade Records</div>
+        <div id="modal-grades"></div>
+      </div>
+      <!-- Fee -->
+      <div>
+        <div style="font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#3b5998;margin-bottom:.75rem;padding-bottom:.4rem;border-bottom:2px solid #bfdbfe;">Fee Information</div>
+        <div id="modal-fee"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ANALYTICS ═══════════ -->
+<div class="page" id="page-analytics">
+  <div class="page-header">
+    <button class="btn-back" onclick="nav('home')">← Back</button>
+    <h2>📊 Analytics Dashboard</h2>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-card"><h3>Grade Distribution</h3><canvas id="chart-grade"></canvas></div>
+    <div class="chart-card"><h3>Department-wise Enrollment</h3><canvas id="chart-dept"></canvas></div>
+    <div class="chart-card"><h3>Score Average by Department</h3><canvas id="chart-avg"></canvas></div>
+    <div class="chart-card"><h3>Admission Type Split</h3><canvas id="chart-admission"></canvas></div>
+  </div>
+
+  <!-- TOPPERS SECTION -->
+  <div class="toppers-section">
+    <h3>🏆 Toppers Board — Top Performing Students</h3>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem;">
+      <label style="margin:0;font-size:.95rem;">Show top</label>
+      <select id="toppers-count" onchange="renderToppers()" style="width:80px;padding:.4rem .6rem;">
+        <option value="5">5</option><option value="10" selected>10</option>
+        <option value="15">15</option><option value="20">All</option>
+      </select>
+      <label style="margin:0;font-size:.95rem;">Filter by Department:</label>
+      <select id="toppers-dept" onchange="renderToppers()" style="width:200px;padding:.4rem .6rem;">
+        <option value="">All Departments</option>
+        <option>Computer Science</option><option>Electronics</option>
+        <option>Mechanical</option><option>Civil</option>
+        <option>Information Science</option><option>Electrical</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table id="toppers-table">
+        <thead>
+          <tr>
+            <th style="width:60px;">Rank</th>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Year</th>
+            <th>Admission</th>
+            <th>Avg Score</th>
+            <th>Grade</th>
+            <th>Courses</th>
+          </tr>
+        </thead>
+        <tbody id="toppers-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ OVERALL OVERVIEW ═══════════ -->
+<div class="page" id="page-overview">
+  <div class="page-header">
+    <button class="btn-back" onclick="nav('home')">← Back</button>
+    <h2>🗂️ Overall Student Overview</h2>
+  </div>
+
+  <div class="form-card" style="padding:1.2rem;">
+    <div class="overview-controls">
+      <input type="text" id="ov-search" placeholder="🔍 Search by name or ID…" oninput="renderOverview()"/>
+      <select id="ov-sort" onchange="renderOverview()">
+        <option value="id">Sort by Student ID</option>
+        <option value="name">Sort by Name</option>
+        <option value="avg">Sort by Avg Score</option>
+        <option value="fee">Sort by Fee Status</option>
+      </select>
+      <select id="ov-filter-admission" onchange="renderOverview()">
+        <option value="">All Admission Types</option>
+        <option value="KCET">KCET</option>
+        <option value="Management">Management</option>
+      </select>
+      <select id="ov-filter-fee" onchange="renderOverview()">
+        <option value="">All Fee Statuses</option>
+        <option value="Paid">Paid</option>
+        <option value="Pending">Pending</option>
+        <option value="Partial">Partial</option>
+      </select>
+      <button class="btn btn-warning" onclick="downloadOverviewPDF()">📄 Download Full PDF Report</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="overview-table">
+      <thead>
+        <tr>
+          <th>Student ID</th><th>Name</th><th>Year</th><th>Dept</th>
+          <th>Admission Type</th><th>Fee Status</th><th>Avg Score</th><th>Final Grade</th>
+        </tr>
+      </thead>
+      <tbody id="ov-table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════ JAVASCRIPT ═══════════ -->
+<script>
+/* ─── COURSE CATALOG BY YEAR ─── */
+const COURSE_CATALOG = {
+  '1st Year': [
+    { name: 'Engineering Mathematics I',    code: 'MA101', credits: 4 },
+    { name: 'Engineering Physics',           code: 'PH101', credits: 4 },
+    { name: 'Engineering Chemistry',         code: 'CH101', credits: 3 },
+    { name: 'Programming in C',             code: 'CS101', credits: 4 },
+    { name: 'Basic Electronics',             code: 'EC101', credits: 3 },
+    { name: 'Engineering Graphics',          code: 'ME101', credits: 3 },
+    { name: 'Technical English',             code: 'HS101', credits: 2 },
+    { name: 'Environmental Science',         code: 'ES101', credits: 2 }
+  ],
+  '2nd Year': [
+    { name: 'Data Structures',               code: 'CS201', credits: 4 },
+    { name: 'Discrete Mathematics',          code: 'MA201', credits: 4 },
+    { name: 'Digital Logic Design',          code: 'EC201', credits: 3 },
+    { name: 'Object Oriented Programming',   code: 'CS202', credits: 4 },
+    { name: 'Computer Organisation',         code: 'CS203', credits: 3 },
+    { name: 'Engineering Mathematics II',    code: 'MA202', credits: 4 },
+    { name: 'Economics for Engineers',       code: 'HS201', credits: 2 },
+    { name: 'Signals and Systems',           code: 'EC202', credits: 3 }
+  ],
+  '3rd Year': [
+    { name: 'Database Management Systems',   code: 'CS301', credits: 4 },
+    { name: 'Operating Systems',             code: 'CS302', credits: 4 },
+    { name: 'Computer Networks',             code: 'CS303', credits: 4 },
+    { name: 'Software Engineering',          code: 'CS304', credits: 3 },
+    { name: 'Theory of Computation',         code: 'CS305', credits: 3 },
+    { name: 'Machine Learning',              code: 'CS306', credits: 4 },
+    { name: 'Microprocessors & Interfacing', code: 'EC301', credits: 3 },
+    { name: 'Web Technologies',              code: 'CS307', credits: 3 }
+  ],
+  '4th Year': [
+    { name: 'Artificial Intelligence',       code: 'CS401', credits: 4 },
+    { name: 'Cloud Computing',               code: 'CS402', credits: 3 },
+    { name: 'Information Security',          code: 'CS403', credits: 4 },
+    { name: 'Big Data Analytics',            code: 'CS404', credits: 3 },
+    { name: 'Deep Learning',                 code: 'CS405', credits: 4 },
+    { name: 'Project Management',            code: 'HS401', credits: 2 },
+    { name: 'Major Project Part I',          code: 'CS406', credits: 6 },
+    { name: 'Major Project Part II',         code: 'CS407', credits: 6 }
+  ]
+};
+
+/* ════════════════════════════════════════════════════════════
+   LOCAL STORAGE ENGINE
+   Works on any device / browser that opens this HTML file.
+   All data is keyed under 'sc_*' so it never conflicts with
+   other apps sharing the same origin.
+   ════════════════════════════════════════════════════════════ */
+
+const LS_KEYS = {
+  students:    'sc_students',
+  enrollments: 'sc_enrollments',
+  grades:      'sc_grades',
+  fees:        'sc_fees',
+  meta:        'sc_meta'
+};
+
+/* Check if localStorage is available in this environment */
+function lsAvailable() {
+  try {
+    const t = '__sc_test__';
+    localStorage.setItem(t, '1');
+    localStorage.removeItem(t);
+    return true;
+  } catch (e) { return false; }
+}
+
+const LS_OK = lsAvailable();
+
+/* Safe read from localStorage */
+function lsGet(key) {
+  if (!LS_OK) return null;
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    console.warn('SmartCampus: failed to read', key, e);
+    return null;
+  }
+}
+
+/* Safe write to localStorage */
+function lsSet(key, value) {
+  if (!LS_OK) return false;
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    /* Quota exceeded or private-browsing restriction */
+    console.error('SmartCampus: failed to write', key, e);
+    toast('⚠️ Storage quota exceeded — some data may not be saved.', '#b45309');
+    return false;
+  }
+}
+
+/* In-memory working copies */
+let students    = [];
+let enrollments = [];
+let grades      = [];
+let fees        = [];
+let bulkRows    = [];
+let charts      = {};
+
+/* Load ALL data from localStorage into memory */
+function loadData() {
+  students    = lsGet(LS_KEYS.students)    || [];
+  enrollments = lsGet(LS_KEYS.enrollments) || [];
+  grades      = lsGet(LS_KEYS.grades)      || [];
+  fees        = lsGet(LS_KEYS.fees)        || [];
+}
+
+/* Persist ALL data from memory to localStorage */
+function save() {
+  lsSet(LS_KEYS.students,    students);
+  lsSet(LS_KEYS.enrollments, enrollments);
+  lsSet(LS_KEYS.grades,      grades);
+  lsSet(LS_KEYS.fees,        fees);
+  /* Store last-saved timestamp */
+  lsSet(LS_KEYS.meta, { savedAt: new Date().toISOString(), counts: {
+    students: students.length, enrollments: enrollments.length,
+    grades: grades.length, fees: fees.length
+  }});
+  updateStorageBadge();
+}
+
+/* Show how much data is stored */
+function updateStorageBadge() {
+  const el = document.getElementById('storage-badge');
+  if (!el) return;
+  if (!LS_OK) { el.textContent = '⚠️ Storage unavailable'; el.style.color = '#dc2626'; return; }
+  try {
+    let total = 0;
+    Object.values(LS_KEYS).forEach(k => {
+      const v = localStorage.getItem(k);
+      if (v) total += v.length;
+    });
+    const kb = (total / 1024).toFixed(1);
+    const meta = lsGet(LS_KEYS.meta);
+    const ts   = meta ? new Date(meta.savedAt).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' }) : '—';
+    el.textContent = `💾 ${kb} KB saved · Last: ${ts}`;
+    el.style.color = '#16a34a';
+  } catch(e) { el.textContent = '💾 Storage active'; }
+}
+
+/* Wipe all data */
+function clearAllData() {
+  if (!confirm('⚠️ This will permanently delete ALL students, enrollments, grades and fee records from this device. Are you sure?')) return;
+  Object.values(LS_KEYS).forEach(k => { try { localStorage.removeItem(k); } catch(e){} });
+  students = []; enrollments = []; grades = []; fees = [];
+  toast('🗑️ All data cleared from this device.', '#dc2626');
+  updateStats();
+  updateStorageBadge();
+}
+
+/* Initialise: load from storage */
+loadData();
+
+/* ─── CLOCK ─── */
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ─── TOAST ─── */
+function toast(msg, color = 'var(--primary)') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+/* ─── NAVIGATION ─── */
+function nav(page) {
+  loadData(); // always fetch latest from localStorage before rendering
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + (page === 'home' ? 'home' : page)).classList.add('active');
+
+  if (page === 'home')         { updateStats();                                                return; }
+  if (page === 'registration') { renderRegistrationTable();                                    return; }
+  if (page === 'enrollment')   { renderEnrollmentPage(); return; }
+  if (page === 'grades')       { populateStudentDropdown('gr-student'); populateCourseDropdown(); renderGradeTable(); return; }
+  if (page === 'fees')         { populateStudentDropdown('fee-student'); autoFillAdmission(); renderFeeTable(); return; }
+  if (page === 'directory')    { renderDirectory();                                            return; }
+  if (page === 'analytics')    { renderAnalytics();                                            return; }
+  if (page === 'overview')     { renderOverview();                                             return; }
+}
+
+/* ─── STATS ─── */
+function updateStats() {
+  document.getElementById('stat-students').textContent = students.length;
+  document.getElementById('stat-courses').textContent  = enrollments.length;
+  document.getElementById('stat-grades').textContent   = grades.length;
+  if (grades.length) {
+    const avg = grades.reduce((s, g) => s + g.score, 0) / grades.length;
+    document.getElementById('stat-avg').textContent = avg.toFixed(1);
+  } else {
+    document.getElementById('stat-avg').textContent = '--';
+  }
+}
+
+/* ─── GRADE LOGIC ─── */
+function calcGrade(score) {
+  if (score >= 90) return { letter:'O', remark:'Outstanding' };
+  if (score >= 75) return { letter:'A', remark:'Excellent' };
+  if (score >= 60) return { letter:'B', remark:'Good' };
+  if (score >= 50) return { letter:'C', remark:'Average' };
+  return             { letter:'F', remark:'Fail' };
+}
+function gradeClass(g) {
+  return g==='O'?'grade-O': g==='A'?'grade-A': g==='B'?'grade-B': g==='C'?'grade-C':'grade-F';
+}
+
+/* ─── POPULATE DROPDOWNS ─── */
+function populateStudentDropdown(id) {
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">-- Select Student --</option>';
+  students.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = `${s.id} – ${s.name}`;
+    sel.appendChild(opt);
+  });
+  if (prev) sel.value = prev;
+}
+
+function populateCourseDropdown() {
+  const sid = document.getElementById('gr-student').value;
+  const sel = document.getElementById('gr-course');
+  sel.innerHTML = '<option value="">-- Select Course --</option>';
+  if (!sid) return;
+  enrollments.filter(e => e.studentId === sid).forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e.course;
+    opt.textContent = `${e.course} (${e.code || '—'})`;
+    sel.appendChild(opt);
+  });
+}
+
+/* ─── REGISTRATION ─── */
+function registerStudent() {
+  const id   = document.getElementById('reg-id').value.trim();
+  const name = document.getElementById('reg-name').value.trim();
+  const dept = document.getElementById('reg-dept').value;
+  const year = document.getElementById('reg-year').value;
+  const adm  = document.getElementById('reg-admission').value;
+
+  if (!id || !name || !dept || !year || !adm) {
+    toast('⚠️ Please fill all required (*) fields.', 'var(--warning)'); return;
+  }
+  if (students.find(s => s.id === id)) {
+    toast('❌ Student ID already exists.', 'var(--danger)'); return;
+  }
+
+  students.push({
+    id, name, dept, year, admission: adm,
+    email:   document.getElementById('reg-email').value.trim(),
+    phone:   document.getElementById('reg-phone').value.trim(),
+    dob:     document.getElementById('reg-dob').value,
+    gender:  document.getElementById('reg-gender').value,
+    address: document.getElementById('reg-address').value.trim()
+  });
+  save();
+
+  ['reg-id','reg-name','reg-email','reg-phone','reg-address'].forEach(f => document.getElementById(f).value = '');
+  ['reg-dept','reg-year','reg-admission','reg-gender'].forEach(f => document.getElementById(f).value = '');
+  document.getElementById('reg-dob').value = '';
+
+  renderRegistrationTable();
+  toast('✅ Student registered and saved!', 'var(--success)');
+}
+
+function renderRegistrationTable() {
+  const tb = document.getElementById('reg-table-body');
+  tb.innerHTML = '';
+  if (!students.length) {
+    tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-sub);">No students registered yet.</td></tr>';
+    return;
+  }
+  students.forEach((s, i) => {
+    const admBadge = s.admission === 'KCET'
+      ? '<span class="badge badge-blue">KCET</span>'
+      : '<span class="badge badge-purple">Management</span>';
+    tb.innerHTML += `
+      <tr>
+        <td><strong>${s.id}</strong></td><td>${s.name}</td><td>${s.dept}</td><td>${s.year}</td>
+        <td>${admBadge}</td><td>${s.email || '—'}</td>
+        <td><button class="btn btn-danger" style="padding:.3rem .7rem;font-size:.85rem;" onclick="deleteStudent(${i})">🗑️</button></td>
+      </tr>`;
+  });
+}
+
+function deleteStudent(i) {
+  const sid = students[i].id;
+  students.splice(i, 1);
+  enrollments = enrollments.filter(e => e.studentId !== sid);
+  grades      = grades.filter(g => g.studentId !== sid);
+  fees        = fees.filter(f => f.studentId !== sid);
+  save();
+  renderRegistrationTable();
+  toast('🗑️ Student deleted.', 'var(--danger)');
+}
+
+/* ─── ENROLLMENT – YEAR PANEL APPROACH ─── */
+// First 5 courses from each year's catalog are the "assigned" courses
+const ASSIGNED = {};
+Object.keys(COURSE_CATALOG).forEach(yr => {
+  ASSIGNED[yr] = COURSE_CATALOG[yr].slice(0, 5);
+});
+
+function renderEnrollmentPage() {
+  renderYearPanels();
+  renderEnrollmentTable();
+}
+
+function renderYearPanels() {
+  const container = document.getElementById('enr-year-panels');
+  container.innerHTML = '';
+  const years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+
+  years.forEach(yr => {
+    const yrStudents = students.filter(s => s.year === yr);
+    const courses = ASSIGNED[yr];
+
+    const panel = document.createElement('div');
+    panel.className = 'year-panel';
+
+    const header = document.createElement('div');
+    header.className = 'year-panel-header';
+    const icons = { '1st Year':'🌱', '2nd Year':'📘', '3rd Year':'🔬', '4th Year':'🎓' };
+    header.innerHTML = `${icons[yr] || '📖'} ${yr} — ${yrStudents.length} student${yrStudents.length !== 1 ? 's' : ''}
+      <span style="margin-left:auto;font-size:.82rem;font-weight:400;opacity:.85;">
+        Assigned: ${courses.map(c => c.name).join(' · ')}
+      </span>`;
+    panel.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'year-panel-body';
+
+    if (!yrStudents.length) {
+      body.innerHTML = '<div class="no-students-msg">No students registered for this year yet.</div>';
+    } else {
+      yrStudents.forEach(s => {
+        const enrolled = enrollments.filter(e => e.studentId === s.id).map(e => e.course);
+        const allDone = courses.every(c => enrolled.includes(c.name));
+        const noneDone = !courses.some(c => enrolled.includes(c.name));
+        const statusClass = allDone ? 'full' : noneDone ? 'none' : 'partial';
+        const statusText = allDone ? '✓ Fully Enrolled' : noneDone ? '○ Not Enrolled' : `◑ ${enrolled.filter(n => courses.find(c=>c.name===n)).length}/${courses.length} Enrolled`;
+
+        const row = document.createElement('div');
+        row.className = 'enr-student-row';
+        row.innerHTML = `
+          <div class="enr-student-info">
+            <div class="sname">${s.name}</div>
+            <div class="sid">${s.id}</div>
+            <div class="sid">${s.dept}</div>
+          </div>
+          <div class="enr-courses-list">
+            ${courses.map(c => {
+              const done = enrolled.includes(c.name);
+              return `<div class="enr-course-item ${done ? 'done' : 'todo'}">
+                <span class="cname">${c.name}</span>
+                <span class="ccode">${c.code}</span>
+                <span class="ccred">${c.credits}cr</span>
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="enr-action">
+            <span class="enr-status-chip ${statusClass}">${statusText}</span>
+            ${!allDone ? `<button class="btn btn-success" style="padding:.5rem 1rem;font-size:.88rem;" onclick="enrollAllCourses('${s.id}','${yr}')">➕ Enroll All Courses</button>` : ''}
+            ${enrolled.length ? `<button class="btn btn-danger" style="padding:.4rem .9rem;font-size:.82rem;" onclick="unenrollAll('${s.id}','${yr}')">🗑️ Remove All</button>` : ''}
+          </div>`;
+        body.appendChild(row);
+      });
+    }
+
+    panel.appendChild(body);
+    container.appendChild(panel);
+  });
+}
+
+function enrollAllCourses(sid, yr) {
+  const student = students.find(s => s.id === sid);
+  if (!student) return;
+  const courses = ASSIGNED[yr];
+  const enrolled = enrollments.filter(e => e.studentId === sid).map(e => e.course);
+  let added = 0;
+  courses.forEach(c => {
+    if (!enrolled.includes(c.name)) {
+      enrollments.push({ studentId: sid, studentName: student.name, course: c.name, code: c.code, credits: c.credits, year: yr });
+      added++;
+    }
+  });
+  save();
+  if (added > 0) toast(`✅ Enrolled ${student.name} in ${added} course${added>1?'s':''}!`, 'var(--success)');
+  else toast('ℹ️ Already enrolled in all courses.', 'var(--primary)');
+  renderEnrollmentPage();
+}
+
+function unenrollAll(sid, yr) {
+  const courses = ASSIGNED[yr].map(c => c.name);
+  enrollments = enrollments.filter(e => !(e.studentId === sid && courses.includes(e.course)));
+  save();
+  toast('🗑️ Enrollments removed.', 'var(--danger)');
+  renderEnrollmentPage();
+}
+
+function renderEnrollmentTable() {
+  const tb = document.getElementById('enr-table-body');
+  tb.innerHTML = '';
+  if (!enrollments.length) {
+    tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-sub);">No enrollments yet.</td></tr>';
+    return;
+  }
+  enrollments.forEach((e, i) => {
+    tb.innerHTML += `
+      <tr>
+        <td>${e.studentName} <small style="color:var(--text-sub)">(${e.studentId})</small></td>
+        <td>${e.course}</td><td>${e.code || '—'}</td><td>${e.credits || '—'}</td><td>${e.year}</td>
+        <td><button class="btn btn-danger" style="padding:.3rem .7rem;font-size:.85rem;" onclick="removeEnrollment(${i})">🗑️</button></td>
+      </tr>`;
+  });
+}
+
+function removeEnrollment(i) {
+  enrollments.splice(i, 1);
+  save();
+  renderYearPanels();
+  renderEnrollmentTable();
+  toast('🗑️ Enrollment removed.', 'var(--danger)');
+}
+
+/* ─── GRADES ─── */
+function saveGrade() {
+  const sid    = document.getElementById('gr-student').value;
+  const course = document.getElementById('gr-course').value;
+  const score  = parseFloat(document.getElementById('gr-score').value);
+
+  if (!sid || !course) { toast('⚠️ Select student and course.', 'var(--warning)'); return; }
+  if (isNaN(score) || score < 0 || score > 100) {
+    toast('⚠️ Enter a valid score (0–100).', 'var(--warning)'); return;
+  }
+
+  const existing = grades.find(g => g.studentId === sid && g.course === course);
+  const { letter, remark } = calcGrade(score);
+  if (existing) {
+    existing.score = score; existing.grade = letter; existing.remark = remark;
+  } else {
+    const student = students.find(s => s.id === sid);
+    grades.push({ studentId: sid, studentName: student.name, course, score, grade: letter, remark });
+  }
+  save();
+
+  document.getElementById('gr-score').value = '';
+  renderGradeTable();
+  toast('✅ Grade saved!', 'var(--success)');
+}
+
+function renderGradeTable() {
+  const tb = document.getElementById('gr-table-body');
+  tb.innerHTML = '';
+  if (!grades.length) {
+    tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-sub);">No grades recorded yet.</td></tr>';
+    return;
+  }
+  grades.forEach(g => {
+    tb.innerHTML += `
+      <tr>
+        <td>${g.studentName} <small>(${g.studentId})</small></td>
+        <td>${g.course}</td><td>${g.score}</td>
+        <td class="${gradeClass(g.grade)}">${g.grade} – ${g.remark}</td>
+      </tr>`;
+  });
+}
+
+/* ─── BULK UPLOAD ─── */
+function downloadSampleCSV() {
+  const csv = `StudentID,StudentName,Course,Score\nSC2025001,Arun Kumar,Data Structures,85\nSC2025001,Arun Kumar,Mathematics,72\nSC2025002,Priya Sharma,Data Structures,91\nSC2025002,Priya Sharma,Physics,55\nSC2025003,Rohan Mehta,Chemistry,43`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'SmartCampus_Sample_Grades.csv';
+  a.click();
+}
+
+function processBulkFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  document.getElementById('bulk-file-name').textContent = `📄 ${file.name}`;
+  const reader = new FileReader();
+  reader.onload = e => parseBulkCSV(e.target.result);
+  reader.readAsText(file);
+}
+
+function parseBulkCSV(text) {
+  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
+  if (lines.length < 2) { toast('⚠️ File seems empty or invalid.', 'var(--warning)'); return; }
+  const header = lines[0].toLowerCase();
+  let startIdx = header.includes('studentid') || header.includes('student_id') ? 1 : 0;
+  bulkRows = [];
+  for (let i = startIdx; i < lines.length; i++) {
+    const parts = lines[i].split(',').map(p => p.trim());
+    if (parts.length < 4) continue;
+    const sid = parts[0], sname = parts[1], course = parts[2], score = parseFloat(parts[3]);
+    if (isNaN(score)) continue;
+    const { letter, remark } = calcGrade(score);
+    bulkRows.push({ sid, sname, course, score, grade: letter, remark });
+  }
+  if (!bulkRows.length) { toast('⚠️ No valid rows found.', 'var(--warning)'); return; }
+  renderBulkResult();
+}
+
+function renderBulkResult() {
+  const total = bulkRows.length;
+  const avg = (bulkRows.reduce((s,r) => s+r.score, 0)/total).toFixed(1);
+  const highest = Math.max(...bulkRows.map(r=>r.score));
+  const lowest  = Math.min(...bulkRows.map(r=>r.score));
+  const passes  = bulkRows.filter(r=>r.grade!=='F').length;
+  document.getElementById('bulk-summary-stats').innerHTML = `
+    <div class="summary-stat"><div class="sv">${total}</div><div class="sl">Total Entries</div></div>
+    <div class="summary-stat"><div class="sv">${avg}</div><div class="sl">Average Score</div></div>
+    <div class="summary-stat"><div class="sv">${highest}</div><div class="sl">Highest Score</div></div>
+    <div class="summary-stat"><div class="sv">${lowest}</div><div class="sl">Lowest Score</div></div>
+    <div class="summary-stat"><div class="sv" style="color:var(--success)">${passes}</div><div class="sl">Passed</div></div>
+    <div class="summary-stat"><div class="sv" style="color:var(--danger)">${total-passes}</div><div class="sl">Failed</div></div>`;
+  const tb = document.getElementById('bulk-table-body');
+  tb.innerHTML = '';
+  bulkRows.forEach(r => {
+    tb.innerHTML += `<tr><td>${r.sid}</td><td>${r.sname}</td><td>${r.course}</td><td>${r.score}</td><td class="${gradeClass(r.grade)}">${r.grade}</td><td>${r.remark}</td></tr>`;
+  });
+  document.getElementById('bulk-result').style.display = 'block';
+}
+
+function importBulkGrades() {
+  bulkRows.forEach(r => {
+    const existing = grades.find(g => g.studentId === r.sid && g.course === r.course);
+    if (existing) { existing.score = r.score; existing.grade = r.grade; existing.remark = r.remark; }
+    else grades.push({ studentId:r.sid, studentName:r.sname, course:r.course, score:r.score, grade:r.grade, remark:r.remark });
+  });
+  save();
+  renderGradeTable();
+  toast(`✅ ${bulkRows.length} grade(s) imported and saved!`, 'var(--success)');
+  clearBulk();
+}
+
+function clearBulk() {
+  bulkRows = [];
+  document.getElementById('bulk-result').style.display = 'none';
+  document.getElementById('bulk-file').value = '';
+  document.getElementById('bulk-file-name').textContent = '';
+}
+
+/* ─── FEES ─── */
+function autoFillAdmission() {
+  const sid = document.getElementById('fee-student').value;
+  const student = students.find(s => s.id === sid);
+  if (!student) { document.getElementById('fee-admission').value = ''; document.getElementById('fee-tuition').value = ''; return; }
+  document.getElementById('fee-admission').value = student.admission || '—';
+  document.getElementById('fee-tuition').value = student.admission === 'KCET' ? 50000 : student.admission === 'Management' ? 80000 : 0;
+}
+
+function calcFee() {
+  const sid       = document.getElementById('fee-student').value;
+  const hostel    = parseFloat(document.getElementById('fee-hostel').value)    || 0;
+  const transport = parseFloat(document.getElementById('fee-transport').value) || 0;
+  const status    = document.getElementById('fee-status').value;
+  if (!sid) { toast('⚠️ Select a student.', 'var(--warning)'); return; }
+  const student = students.find(s => s.id === sid);
+  const tuition = student.admission === 'KCET' ? 50000 : student.admission === 'Management' ? 80000 : 0;
+  const total   = tuition + hostel + transport;
+  const existing = fees.find(f => f.studentId === sid);
+  if (existing) { Object.assign(existing, { tuition, hostel, transport, total, status }); }
+  else fees.push({ studentId:sid, studentName:student.name, admission:student.admission, tuition, hostel, transport, total, status });
+  save();
+  document.getElementById('fee-result').innerHTML = `
+    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:1.2rem;">
+      <strong style="font-size:1.1rem;">💳 Fee Breakdown for ${student.name}</strong><br/><br/>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.8rem;margin-top:.5rem;">
+        <div><strong>Admission:</strong><br/>${student.admission}</div>
+        <div><strong>Tuition:</strong><br/>₹${tuition.toLocaleString()}</div>
+        <div><strong>Hostel:</strong><br/>₹${hostel.toLocaleString()}</div>
+        <div><strong>Transport:</strong><br/>₹${transport.toLocaleString()}</div>
+        <div><strong>Total:</strong><br/><span style="font-size:1.3rem;font-weight:800;color:var(--primary)">₹${total.toLocaleString()}</span></div>
+        <div><strong>Status:</strong><br/><span class="badge ${status==='Paid'?'badge-green':status==='Partial'?'badge-yellow':'badge-red'}">${status}</span></div>
+      </div>
+    </div>`;
+  renderFeeTable();
+  toast('✅ Fee record saved!', 'var(--success)');
+}
+
+function renderFeeTable() {
+  const tb = document.getElementById('fee-table-body');
+  tb.innerHTML = '';
+  if (!fees.length) { tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-sub);">No fee records yet.</td></tr>'; return; }
+  fees.forEach(f => {
+    const badge = f.status==='Paid'?'badge-green':f.status==='Partial'?'badge-yellow':'badge-red';
+    tb.innerHTML += `<tr>
+      <td>${f.studentName} <small>(${f.studentId})</small></td>
+      <td>${f.admission}</td><td>₹${f.tuition.toLocaleString()}</td>
+      <td>₹${f.hostel.toLocaleString()}</td><td>₹${f.transport.toLocaleString()}</td>
+      <td><strong>₹${f.total.toLocaleString()}</strong></td>
+      <td><span class="badge ${badge}">${f.status}</span></td>
+    </tr>`;
+  });
+}
+
+/* ─── DIRECTORY ─── */
+/* Always reloads from localStorage first so the table reflects every
+   student registered in this or any previous session on this machine. */
+function renderDirectory() {
+  loadData(); // ← pull latest stored data before every render
+
+  const search = document.getElementById('dir-search').value.toLowerCase();
+  const dept   = document.getElementById('dir-dept').value;
+  const year   = document.getElementById('dir-year').value;
+  const sort   = document.getElementById('dir-sort').value;
+
+  let list = students.filter(s =>
+    (!search || s.id.toLowerCase().includes(search) || s.name.toLowerCase().includes(search)) &&
+    (!dept || s.dept === dept) && (!year || s.year === year)
+  );
+  list.sort((a,b) => sort==='name'?a.name.localeCompare(b.name): sort==='dept'?a.dept.localeCompare(b.dept): a.id.localeCompare(b.id));
+
+  const tb = document.getElementById('dir-table-body');
+  tb.innerHTML = '';
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-sub);">No students registered yet. Add students in the Registration section first.</td></tr>';
+    return;
+  }
+  list.forEach(s => {
+    const admBadge = s.admission==='KCET'?'<span class="badge badge-blue">KCET</span>':'<span class="badge badge-purple">Management</span>';
+    tb.innerHTML += `<tr>
+      <td><strong>${s.id}</strong></td><td>${s.name}</td><td>${s.dept}</td><td>${s.year}</td>
+      <td>${admBadge}</td><td>${s.email||'—'}</td><td>${s.phone||'—'}</td>
+      <td><button class="btn btn-accent" style="padding:.35rem .9rem;font-size:.88rem;" onclick="viewStudent('${s.id}')">👁️ View</button></td>
+    </tr>`;
+  });
+}
+
+function viewStudent(sid) {
+  const s = students.find(x => x.id === sid);
+  if (!s) return;
+
+  // Avatar initials
+  const initials = s.name.trim().split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+  document.getElementById('modal-avatar').textContent = initials;
+  document.getElementById('modal-name').textContent = s.name;
+  document.getElementById('modal-id-badge').textContent = `${s.id}  ·  ${s.dept}  ·  ${s.year}`;
+
+  // Personal info
+  const pFields = [
+    ['Email',    s.email   || '—'],
+    ['Phone',    s.phone   || '—'],
+    ['Gender',   s.gender  || '—'],
+    ['Date of Birth', s.dob || '—'],
+    ['Address',  s.address || '—'],
+  ];
+  document.getElementById('modal-personal').innerHTML = pFields.map(([l,v]) =>
+    `<div class="modal-field"><div class="mf-label">${l}</div><div class="mf-value">${v}</div></div>`).join('');
+
+  // Academic info
+  const admBadge = s.admission==='KCET'?'<span class="badge badge-blue">KCET</span>':'<span class="badge badge-purple">Management</span>';
+  document.getElementById('modal-academic').innerHTML = `
+    <div class="modal-field"><div class="mf-label">Department</div><div class="mf-value">${s.dept}</div></div>
+    <div class="modal-field"><div class="mf-label">Year of Study</div><div class="mf-value">${s.year}</div></div>
+    <div class="modal-field"><div class="mf-label">Admission Type</div><div class="mf-value">${admBadge}</div></div>`;
+
+  // Courses
+  const enr = enrollments.filter(e => e.studentId === sid);
+  if (enr.length) {
+    document.getElementById('modal-courses').innerHTML =
+      `<div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+        ${enr.map(e => `<span style="background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;padding:.25rem .75rem;font-size:.88rem;font-weight:600;">${e.course} <small style="opacity:.7">(${e.code||'—'})</small></span>`).join('')}
+      </div>`;
+  } else {
+    document.getElementById('modal-courses').innerHTML = '<span style="color:var(--text-sub);font-size:.92rem;">No courses enrolled yet.</span>';
+  }
+
+  // Grades
+  const sg = grades.filter(g => g.studentId === sid);
+  if (sg.length) {
+    const avg = sg.reduce((a,g) => a+g.score, 0) / sg.length;
+    const overallGrade = calcGrade(avg).letter;
+    document.getElementById('modal-grades').innerHTML = `
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:.7rem 1rem;margin-bottom:.8rem;font-size:.92rem;">
+        Average Score: <strong>${avg.toFixed(1)}</strong> &nbsp;|&nbsp; Overall Grade: <strong class="${gradeClass(overallGrade)}">${overallGrade}</strong>
+      </div>
+      <div class="table-wrap"><table style="font-size:.88rem;">
+        <thead><tr><th>Course</th><th>Score</th><th>Grade</th><th>Remark</th></tr></thead>
+        <tbody>${sg.map(g => `<tr><td>${g.course}</td><td>${g.score}</td><td class="${gradeClass(g.grade)}">${g.grade}</td><td>${g.remark}</td></tr>`).join('')}</tbody>
+      </table></div>`;
+  } else {
+    document.getElementById('modal-grades').innerHTML = '<span style="color:var(--text-sub);font-size:.92rem;">No grades recorded yet.</span>';
+  }
+
+  // Fee
+  const feeRec = fees.find(f => f.studentId === sid);
+  if (feeRec) {
+    const feeClass = feeRec.status==='Paid'?'badge-green':feeRec.status==='Partial'?'badge-yellow':'badge-red';
+    document.getElementById('modal-fee').innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.8rem;">
+        <div class="modal-field"><div class="mf-label">Tuition</div><div class="mf-value">₹${feeRec.tuition.toLocaleString()}</div></div>
+        <div class="modal-field"><div class="mf-label">Hostel</div><div class="mf-value">₹${feeRec.hostel.toLocaleString()}</div></div>
+        <div class="modal-field"><div class="mf-label">Transport</div><div class="mf-value">₹${feeRec.transport.toLocaleString()}</div></div>
+        <div class="modal-field"><div class="mf-label">Total</div><div class="mf-value" style="color:var(--primary);font-weight:800;font-size:1.05rem;">₹${feeRec.total.toLocaleString()}</div></div>
+        <div class="modal-field"><div class="mf-label">Status</div><div class="mf-value"><span class="badge ${feeClass}">${feeRec.status}</span></div></div>
+      </div>`;
+  } else {
+    document.getElementById('modal-fee').innerHTML = '<span style="color:var(--text-sub);font-size:.92rem;">No fee record found.</span>';
+  }
+
+  const modal = document.getElementById('student-modal');
+  modal.style.display = 'flex';
+  document.addEventListener('keydown', escCloseModal);
+}
+
+function closeStudentModal() {
+  document.getElementById('student-modal').style.display = 'none';
+  document.removeEventListener('keydown', escCloseModal);
+}
+function escCloseModal(e) { if (e.key === 'Escape') closeStudentModal(); }
+
+// Close on backdrop click
+document.getElementById('student-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeStudentModal();
+});
+
+/* ─── ANALYTICS ─── */
+/* Always reloads from localStorage first so charts reflect every grade,
+   enrollment and student record saved in this or any previous session. */
+function renderAnalytics() {
+  loadData(); // ← pull latest stored data before every render
+
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  const gradeCounts = { O:0, A:0, B:0, C:0, F:0 };
+  grades.forEach(g => gradeCounts[g.grade]++);
+  charts.grade = new Chart(document.getElementById('chart-grade'), {
+    type: 'doughnut',
+    data: { labels:['Outstanding (O)','Excellent (A)','Good (B)','Average (C)','Fail (F)'],
+      datasets:[{ data:Object.values(gradeCounts), backgroundColor:['#16a34a','#1d4ed8','#7c3aed','#d97706','#dc2626'] }] },
+    options: { plugins:{ legend:{ position:'bottom' } } }
+  });
+
+  const deptCounts = {};
+  students.forEach(s => { deptCounts[s.dept] = (deptCounts[s.dept]||0)+1; });
+  charts.dept = new Chart(document.getElementById('chart-dept'), {
+    type:'bar',
+    data:{ labels:Object.keys(deptCounts), datasets:[{ label:'Students', data:Object.values(deptCounts), backgroundColor:'#3b82f6' }] },
+    options:{ scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } } }
+  });
+
+  const deptScores = {};
+  grades.forEach(g => {
+    const student = students.find(s => s.id === g.studentId);
+    if (!student) return;
+    if (!deptScores[student.dept]) deptScores[student.dept] = [];
+    deptScores[student.dept].push(g.score);
+  });
+  const deptAvgs = Object.fromEntries(Object.entries(deptScores).map(([d,arr]) => [d, (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1)]));
+  charts.avg = new Chart(document.getElementById('chart-avg'), {
+    type:'bar',
+    data:{ labels:Object.keys(deptAvgs), datasets:[{ label:'Avg Score', data:Object.values(deptAvgs), backgroundColor:'#0ea5e9' }] },
+    options:{ scales:{ y:{ beginAtZero:true, max:100 } } }
+  });
+
+  const admCounts = { KCET:0, Management:0 };
+  students.forEach(s => { if (s.admission) admCounts[s.admission]++; });
+  charts.admission = new Chart(document.getElementById('chart-admission'), {
+    type:'pie',
+    data:{ labels:['KCET','Management'], datasets:[{ data:[admCounts.KCET, admCounts.Management], backgroundColor:['#1d4ed8','#7c3aed'] }] },
+    options:{ plugins:{ legend:{ position:'bottom' } } }
+  });
+
+  renderToppers();
+}
+
+/* ─── TOPPERS ─── */
+function renderToppers() {
+  const countSel = document.getElementById('toppers-count').value;
+  const deptFilt = document.getElementById('toppers-dept').value;
+
+  // Build per-student averages
+  let toppers = students.map(s => {
+    const sg = grades.filter(g => g.studentId === s.id);
+    const avg = sg.length ? sg.reduce((a, g) => a + g.score, 0) / sg.length : null;
+    const grade = avg !== null ? calcGrade(avg).letter : '—';
+    return { ...s, avg: avg !== null ? parseFloat(avg.toFixed(1)) : null, grade, courseCount: sg.length };
+  });
+
+  // Filter by dept if selected
+  if (deptFilt) toppers = toppers.filter(t => t.dept === deptFilt);
+
+  // Only students with at least one grade
+  toppers = toppers.filter(t => t.avg !== null);
+
+  // Sort by avg descending
+  toppers.sort((a, b) => b.avg - a.avg);
+
+  // Limit
+  const limit = countSel === '20' ? toppers.length : parseInt(countSel);
+  toppers = toppers.slice(0, limit);
+
+  const tb = document.getElementById('toppers-body');
+  tb.innerHTML = '';
+
+  if (!toppers.length) {
+    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-sub);padding:2rem;">No data available. Add students and record grades first.</td></tr>';
+    return;
+  }
+
+  toppers.forEach((t, i) => {
+    const rank = i + 1;
+    let rankBadgeClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other';
+    let rankEmoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+    let rowClass = rank === 1 ? 'topper-row-1' : rank === 2 ? 'topper-row-2' : rank === 3 ? 'topper-row-3' : '';
+    const admBadge = t.admission==='KCET'?'<span class="badge badge-blue">KCET</span>':'<span class="badge badge-purple">Management</span>';
+
+    tb.innerHTML += `
+      <tr class="${rowClass}">
+        <td><span class="rank-badge ${rankBadgeClass}">${rankEmoji}</span></td>
+        <td><strong>${t.id}</strong></td>
+        <td>${t.name}</td>
+        <td>${t.dept}</td>
+        <td>${t.year}</td>
+        <td>${admBadge}</td>
+        <td><strong style="font-size:1.1rem;color:var(--primary)">${t.avg}</strong></td>
+        <td class="${gradeClass(t.grade)}">${t.grade}</td>
+        <td>${t.courseCount} course${t.courseCount !== 1 ? 's' : ''}</td>
+      </tr>`;
+  });
+}
+
+/* ─── OVERVIEW ─── */
+function getStudentAvgGrade(sid) {
+  const sg = grades.filter(g => g.studentId === sid);
+  if (!sg.length) return { avg: null, grade: '—' };
+  const avg = sg.reduce((s, g) => s + g.score, 0) / sg.length;
+  return { avg: parseFloat(avg.toFixed(1)), grade: calcGrade(avg).letter };
+}
+function getStudentFeeStatus(sid) {
+  const f = fees.find(f => f.studentId === sid);
+  return f ? f.status : 'Not Set';
+}
+
+function renderOverview() {
+  const search    = document.getElementById('ov-search').value.toLowerCase();
+  const sortBy    = document.getElementById('ov-sort').value;
+  const admFilter = document.getElementById('ov-filter-admission').value;
+  const feeFilter = document.getElementById('ov-filter-fee').value;
+
+  let list = students.filter(s =>
+    (!search || s.id.toLowerCase().includes(search) || s.name.toLowerCase().includes(search)) &&
+    (!admFilter || s.admission === admFilter)
+  );
+
+  let rows = list.map(s => {
+    const { avg, grade } = getStudentAvgGrade(s.id);
+    const feeStatus = getStudentFeeStatus(s.id);
+    return { ...s, avg, grade, feeStatus };
+  });
+
+  if (feeFilter) rows = rows.filter(r => r.feeStatus === feeFilter);
+
+  rows.sort((a,b) => {
+    if (sortBy === 'name') return a.name.localeCompare(b.name);
+    if (sortBy === 'avg')  return (b.avg ?? -1) - (a.avg ?? -1);
+    if (sortBy === 'fee')  return a.feeStatus.localeCompare(b.feeStatus);
+    return a.id.localeCompare(b.id);
+  });
+
+  const tb = document.getElementById('ov-table-body');
+  tb.innerHTML = '';
+
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-sub);">No students match the filters.</td></tr>';
+    return;
+  }
+
+  rows.forEach(r => {
+    const admBadge = r.admission==='KCET'?'<span class="badge badge-blue">KCET</span>':'<span class="badge badge-purple">Management</span>';
+    const feeClass = r.feeStatus==='Paid'?'badge-green': r.feeStatus==='Partial'?'badge-yellow': r.feeStatus==='Pending'?'badge-red':'badge-gray';
+    const grClass  = r.grade !== '—' ? gradeClass(r.grade) : '';
+    tb.innerHTML += `
+      <tr>
+        <td><strong>${r.id}</strong></td><td>${r.name}</td><td>${r.year}</td><td>${r.dept}</td>
+        <td>${admBadge}</td>
+        <td><span class="badge ${feeClass}">${r.feeStatus}</span></td>
+        <td>${r.avg !== null ? r.avg : '—'}</td>
+        <td class="${grClass}">${r.grade}</td>
+      </tr>`;
+  });
+}
+
+/* ─── DOWNLOAD COMPREHENSIVE PDF (ALL DATA) ─── */
+function downloadOverviewPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const PW = 297, PH = 210;
+  const L = 14, R = 14;
+  const COL_W = PW - L - R;
+  let y = 0;
+
+  /* ── helpers ── */
+  function pageHeader() {
+    doc.setFillColor(29, 78, 216);
+    doc.rect(0, 0, PW, 16, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(11); doc.setFont('helvetica','bold');
+    doc.text('🎓 SmartCampus — Complete Student Data Report', L, 11);
+    doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+    doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`, PW - R - 60, 11);
+  }
+
+  function addPageIfNeeded(needed = 20) {
+    if (y + needed > PH - 14) {
+      doc.addPage();
+      pageHeader();
+      y = 22;
+      addPageFooter();
+    }
+  }
+
+  function addPageFooter() {
+    const pg = doc.internal.getCurrentPageInfo().pageNumber;
+    doc.setFontSize(7); doc.setTextColor(148,163,184);
+    doc.text(`SmartCampus Information System  ·  Page ${pg}  ·  Data stored in browser localStorage`, L, PH - 5);
+  }
+
+  function sectionHeading(title, color = [29,78,216]) {
+    addPageIfNeeded(14);
+    doc.setFillColor(...color);
+    doc.rect(L, y, COL_W, 8, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(9.5); doc.setFont('helvetica','bold');
+    doc.text(title, L + 3, y + 5.5);
+    y += 11;
+    doc.setTextColor(30,58,95);
+  }
+
+  function kv(label, value, x, lineY, labelW = 32) {
+    doc.setFontSize(7.5); doc.setFont('helvetica','bold'); doc.setTextColor(100,116,139);
+    doc.text(label + ':', x, lineY);
+    doc.setFont('helvetica','normal'); doc.setTextColor(30,58,95);
+    doc.text(String(value || '—'), x + labelW, lineY);
+  }
+
+  /* ════ PAGE 1: COVER + SUMMARY ════ */
+  doc.setFillColor(29,78,216);
+  doc.rect(0, 0, PW, PH, 'F');
+  doc.setFillColor(14,165,233);
+  doc.circle(PW - 40, PH - 40, 60, 'F');
+  doc.setFillColor(255,255,255);
+  doc.setTextColor(255,255,255);
+
+  doc.setFontSize(28); doc.setFont('helvetica','bold');
+  doc.text('SmartCampus', L + 10, 65);
+  doc.setFontSize(13); doc.setFont('helvetica','normal');
+  doc.text('Complete Student Data Report', L + 10, 78);
+
+  doc.setFontSize(9.5); doc.setFont('helvetica','normal');
+  doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}`, L + 10, 92);
+  doc.text(`Time: ${new Date().toLocaleTimeString('en-IN')}`, L + 10, 100);
+
+  // Summary boxes
+  const boxes = [
+    { label: 'Total Students',    val: students.length,     col: [255,255,255] },
+    { label: 'Total Enrollments', val: enrollments.length,  col: [255,255,255] },
+    { label: 'Grades Recorded',   val: grades.length,       col: [255,255,255] },
+    { label: 'Fee Records',       val: fees.length,         col: [255,255,255] },
+  ];
+  const bw = 52, bh = 24, bxStart = L + 10, by = 118, gap = 8;
+  boxes.forEach((b, i) => {
+    const bx = bxStart + i * (bw + gap);
+    doc.setFillColor(255, 255, 255, 0.15);
+    doc.setDrawColor(255,255,255); doc.setLineWidth(0.5);
+    doc.roundedRect(bx, by, bw, bh, 3, 3, 'S');
+    doc.setFontSize(18); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+    doc.text(String(b.val), bx + bw/2, by + 12, { align:'center' });
+    doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+    doc.text(b.label, bx + bw/2, by + 20, { align:'center' });
+  });
+
+  // Admission breakdown
+  const kcetCount = students.filter(s => s.admission === 'KCET').length;
+  const mgmtCount = students.filter(s => s.admission === 'Management').length;
+  doc.setFontSize(9); doc.setTextColor(220,234,254);
+  doc.text(`Admission Split:   KCET: ${kcetCount}   Management: ${mgmtCount}`, L + 10, 155);
+
+  const paidFees    = fees.filter(f => f.status === 'Paid').length;
+  const pendingFees = fees.filter(f => f.status === 'Pending').length;
+  const totalRevenue = fees.reduce((s,f) => s + (f.total || 0), 0);
+  doc.text(`Fee Status:   Paid: ${paidFees}   Pending: ${pendingFees}   Total Revenue: Rs.${totalRevenue.toLocaleString()}`, L + 10, 164);
+
+  if (grades.length) {
+    const globalAvg = grades.reduce((s,g) => s+g.score, 0) / grades.length;
+    doc.text(`Academic Average Score: ${globalAvg.toFixed(1)} / 100`, L + 10, 173);
+  }
+
+  doc.setFontSize(8); doc.setTextColor(147,197,253);
+  doc.text('Data is stored in your browser\'s localStorage and persists across sessions on this device.', L + 10, PH - 12);
+  addPageFooter();
+
+  /* ════ PAGE 2: STUDENT PROFILES ════ */
+  doc.addPage();
+  pageHeader();
+  y = 22;
+  addPageFooter();
+  sectionHeading('SECTION 1 — STUDENT PROFILES', [29,78,216]);
+
+  if (!students.length) {
+    doc.setFontSize(9); doc.setTextColor(100,116,139);
+    doc.text('No students registered yet.', L, y); y += 10;
+  } else {
+    doc.autoTable({
+      startY: y,
+      head: [['#','Student ID','Full Name','Dept','Year','Admission','Email','Phone','Gender','DOB','Address']],
+      body: students.map((s,i) => [
+        i+1, s.id, s.name, s.dept, s.year, s.admission || '—',
+        s.email||'—', s.phone||'—', s.gender||'—', s.dob||'—', s.address||'—'
+      ]),
+      headStyles: { fillColor:[29,78,216], textColor:[255,255,255], fontStyle:'bold', fontSize:7.5 },
+      bodyStyles: { fontSize:7, textColor:[30,58,95] },
+      alternateRowStyles: { fillColor:[239,246,255] },
+      columnStyles: {
+        0:{ cellWidth:7 }, 1:{ cellWidth:22 }, 2:{ cellWidth:30 },
+        3:{ cellWidth:22 }, 4:{ cellWidth:15 }, 5:{ cellWidth:22 },
+        6:{ cellWidth:32 }, 7:{ cellWidth:22 }, 8:{ cellWidth:14 },
+        9:{ cellWidth:18 }, 10:{ cellWidth:'auto' }
+      },
+      margin:{ left:L, right:R },
+      didDrawPage: () => { addPageFooter(); }
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  /* ════ PAGE 3: ENROLLMENTS ════ */
+  addPageIfNeeded(20);
+  sectionHeading('SECTION 2 — COURSE ENROLLMENTS', [5,150,105]);
+
+  if (!enrollments.length) {
+    doc.setFontSize(9); doc.setTextColor(100,116,139);
+    doc.text('No course enrollments recorded yet.', L, y); y += 10;
+  } else {
+    doc.autoTable({
+      startY: y,
+      head: [['#','Student ID','Student Name','Course Name','Code','Credits','Year']],
+      body: enrollments.map((e,i) => [i+1, e.studentId, e.studentName, e.course, e.code||'—', e.credits||'—', e.year]),
+      headStyles: { fillColor:[5,150,105], textColor:[255,255,255], fontStyle:'bold', fontSize:8 },
+      bodyStyles: { fontSize:7.5, textColor:[30,58,95] },
+      alternateRowStyles: { fillColor:[240,253,244] },
+      columnStyles: {
+        0:{ cellWidth:8 }, 1:{ cellWidth:24 }, 2:{ cellWidth:36 },
+        3:{ cellWidth:60 }, 4:{ cellWidth:18 }, 5:{ cellWidth:16 }, 6:{ cellWidth:20 }
+      },
+      margin:{ left:L, right:R },
+      didDrawPage: () => { addPageFooter(); }
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  /* ════ PAGE 4: GRADES ════ */
+  addPageIfNeeded(20);
+  sectionHeading('SECTION 3 — GRADE RECORDS', [124,58,237]);
+
+  if (!grades.length) {
+    doc.setFontSize(9); doc.setTextColor(100,116,139);
+    doc.text('No grades recorded yet.', L, y); y += 10;
+  } else {
+    doc.autoTable({
+      startY: y,
+      head: [['#','Student ID','Student Name','Course','Score','Grade','Remark']],
+      body: grades.map((g,i) => [i+1, g.studentId, g.studentName, g.course, g.score, g.grade, g.remark]),
+      headStyles: { fillColor:[124,58,237], textColor:[255,255,255], fontStyle:'bold', fontSize:8 },
+      bodyStyles: { fontSize:7.5, textColor:[30,58,95] },
+      alternateRowStyles: { fillColor:[245,243,255] },
+      columnStyles: {
+        0:{ cellWidth:8 }, 1:{ cellWidth:24 }, 2:{ cellWidth:38 },
+        3:{ cellWidth:58 }, 4:{ cellWidth:16 }, 5:{ cellWidth:14 }, 6:{ cellWidth:'auto' }
+      },
+      margin:{ left:L, right:R },
+      willDrawCell: (data) => {
+        if (data.section === 'body' && data.column.index === 5) {
+          const g = data.cell.text[0];
+          if (g==='O'||g==='A') data.cell.styles.textColor = [22,163,74];
+          else if (g==='B')     data.cell.styles.textColor = [124,58,237];
+          else if (g==='C')     data.cell.styles.textColor = [217,119,6];
+          else if (g==='F')     data.cell.styles.textColor = [220,38,38];
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      didDrawPage: () => { addPageFooter(); }
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  /* ════ PAGE 5: FEES ════ */
+  addPageIfNeeded(20);
+  sectionHeading('SECTION 4 — FEE RECORDS', [217,119,6]);
+
+  if (!fees.length) {
+    doc.setFontSize(9); doc.setTextColor(100,116,139);
+    doc.text('No fee records found.', L, y); y += 10;
+  } else {
+    const feeRows = fees.map((f,i) => [
+      i+1, f.studentId, f.studentName, f.admission||'—',
+      `Rs.${(f.tuition||0).toLocaleString()}`,
+      `Rs.${(f.hostel||0).toLocaleString()}`,
+      `Rs.${(f.transport||0).toLocaleString()}`,
+      `Rs.${(f.total||0).toLocaleString()}`,
+      f.status
+    ]);
+    doc.autoTable({
+      startY: y,
+      head: [['#','Student ID','Name','Admission','Tuition','Hostel','Transport','Total','Status']],
+      body: feeRows,
+      headStyles: { fillColor:[217,119,6], textColor:[255,255,255], fontStyle:'bold', fontSize:8 },
+      bodyStyles: { fontSize:7.5, textColor:[30,58,95] },
+      alternateRowStyles: { fillColor:[255,251,235] },
+      columnStyles: {
+        0:{ cellWidth:8 }, 1:{ cellWidth:24 }, 2:{ cellWidth:34 },
+        3:{ cellWidth:22 }, 4:{ cellWidth:22 }, 5:{ cellWidth:18 },
+        6:{ cellWidth:22 }, 7:{ cellWidth:26 }, 8:{ cellWidth:'auto' }
+      },
+      willDrawCell: (data) => {
+        if (data.section === 'body' && data.column.index === 8) {
+          const s = data.cell.text[0];
+          if (s === 'Paid')    data.cell.styles.textColor = [22,163,74];
+          else if (s === 'Partial') data.cell.styles.textColor = [217,119,6];
+          else                 data.cell.styles.textColor = [220,38,38];
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      margin:{ left:L, right:R },
+      didDrawPage: () => { addPageFooter(); }
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    /* Fee totals row */
+    addPageIfNeeded(14);
+    const totT = fees.reduce((s,f)=>s+(f.tuition||0),0);
+    const totH = fees.reduce((s,f)=>s+(f.hostel||0),0);
+    const totTr= fees.reduce((s,f)=>s+(f.transport||0),0);
+    const totA = fees.reduce((s,f)=>s+(f.total||0),0);
+    doc.setFillColor(29,78,216);
+    doc.rect(L, y, COL_W, 9, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text(`TOTALS  —  Tuition: Rs.${totT.toLocaleString()}   Hostel: Rs.${totH.toLocaleString()}   Transport: Rs.${totTr.toLocaleString()}   Grand Total: Rs.${totA.toLocaleString()}`, L+3, y+6);
+    y += 14;
+  }
+
+  /* ════ PAGE 6: PER-STUDENT SUMMARY ════ */
+  addPageIfNeeded(20);
+  sectionHeading('SECTION 5 — CONSOLIDATED PER-STUDENT SUMMARY', [14,116,144]);
+
+  const summaryRows = students.map((s,i) => {
+    const sg   = grades.filter(g => g.studentId === s.id);
+    const avg  = sg.length ? (sg.reduce((a,g)=>a+g.score,0)/sg.length).toFixed(1) : '—';
+    const grade= sg.length ? calcGrade(parseFloat(avg)).letter : '—';
+    const enrC = enrollments.filter(e => e.studentId === s.id).length;
+    const feeR = fees.find(f => f.studentId === s.id);
+    const feeTotal  = feeR ? `Rs.${feeR.total.toLocaleString()}` : '—';
+    const feeStatus = feeR ? feeR.status : 'Not Set';
+    return [ i+1, s.id, s.name, s.dept, s.year, s.admission||'—', enrC, sg.length, avg, grade, feeTotal, feeStatus ];
+  });
+
+  doc.autoTable({
+    startY: y,
+    head: [['#','ID','Name','Dept','Year','Admission','Courses','Grades','Avg Score','Grade','Total Fee','Fee Status']],
+    body: summaryRows,
+    headStyles: { fillColor:[14,116,144], textColor:[255,255,255], fontStyle:'bold', fontSize:7.5 },
+    bodyStyles: { fontSize:7, textColor:[30,58,95] },
+    alternateRowStyles: { fillColor:[240,249,255] },
+    columnStyles: {
+      0:{ cellWidth:7 }, 1:{ cellWidth:22 }, 2:{ cellWidth:30 },
+      3:{ cellWidth:22 }, 4:{ cellWidth:14 }, 5:{ cellWidth:20 },
+      6:{ cellWidth:14 }, 7:{ cellWidth:12 }, 8:{ cellWidth:16 },
+      9:{ cellWidth:12 }, 10:{ cellWidth:22 }, 11:{ cellWidth:'auto' }
+    },
+    willDrawCell: (data) => {
+      if (data.section === 'body') {
+        if (data.column.index === 9) {
+          const g = data.cell.text[0];
+          if (g==='O'||g==='A') data.cell.styles.textColor = [22,163,74];
+          else if (g==='B')     data.cell.styles.textColor = [124,58,237];
+          else if (g==='C')     data.cell.styles.textColor = [217,119,6];
+          else if (g==='F')     data.cell.styles.textColor = [220,38,38];
+          data.cell.styles.fontStyle = 'bold';
+        }
+        if (data.column.index === 11) {
+          const s = data.cell.text[0];
+          if (s === 'Paid')    data.cell.styles.textColor = [22,163,74];
+          else if (s === 'Partial') data.cell.styles.textColor = [217,119,6];
+          else if (s === 'Pending') data.cell.styles.textColor = [220,38,38];
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+    },
+    margin:{ left:L, right:R },
+    didDrawPage: () => { addPageFooter(); }
+  });
+
+  /* Final page numbers pass */
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    if (i > 1) {
+      doc.setFontSize(7); doc.setTextColor(148,163,184);
+      doc.text(`Page ${i} of ${totalPages}  ·  SmartCampus Information System`, PW - R, PH - 5, { align:'right' });
+    }
+  }
+
+  doc.save(`SmartCampus_FullReport_${new Date().toISOString().slice(0,10)}.pdf`);
+  toast('📄 Full report downloaded!', 'var(--success)');
+}
+
+/* ─── INIT ─── */
+updateStats();
+updateStorageBadge();
+
+/* ─── CROSS-TAB / CROSS-SESSION SYNC ─────────────────────────────
+   The 'storage' event fires in every OTHER tab/window from the same
+   origin (same file path) whenever localStorage is written.
+   This means: register a student in one VS Code Live Server tab →
+   the Directory and Analytics tab refresh automatically.
+   Within the SAME tab, loadData() calls inside each render function
+   already handle fresh reads on every page visit.
+   ─────────────────────────────────────────────────────────────── */
+window.addEventListener('storage', function(e) {
+  // Only react to our own keys
+  if (!e.key || !e.key.startsWith('sc_')) return;
+
+  loadData(); // sync in-memory arrays with the updated localStorage
+
+  // Re-render whichever page is currently visible
+  const activePage = document.querySelector('.page.active');
+  if (!activePage) return;
+  const pid = activePage.id;
+
+  if (pid === 'page-directory') renderDirectory();
+  if (pid === 'page-analytics') { renderAnalytics(); }
+  if (pid === 'page-overview')  renderOverview();
+  if (pid === 'page-home')      { updateStats(); updateStorageBadge(); }
+});
+</script>
+</body>
+</html>
